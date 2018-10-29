@@ -1,5 +1,6 @@
 # go-hole
 [![Build Status](https://travis-ci.org/davidepedranz/go-hole.svg?branch=master)](https://travis-ci.org/davidepedranz/go-hole)
+[![Go Report Card](https://goreportcard.com/badge/github.com/davidepedranz/go-hole)](https://goreportcard.com/report/github.com/davidepedranz/go-hole)
 
 `go-hole` is a fast and lightweight [DNS sinkhole](https://en.wikipedia.org/wiki/DNS_Sinkhole) that blocks domains known to serve ads, tracking scripts, malware and other unwanted content. It also caches DNS responses to reduce latency, and collects anonymous statistics about the DNS traffic. `go-hole` is written in Go and runs on every platform and operating systems supported by the Go compiler. `go-hole` can be combined with a private VPN to protect mobile devices on every network.
 
