@@ -1,0 +1,7 @@
+.idea/
+vendor/
+go-hole
+.git/
+README.md
+LICENSE
+scripts/
