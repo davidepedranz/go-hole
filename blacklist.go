@@ -88,26 +88,29 @@ func LoadBlacklistOrFail(path string) *Blacklist {
 func LoadBlacklist(path string) (*Blacklist, error) {
 
 	// open the file
-	file, err := os.Open(path)
-	defer file.Close()
-	if err != nil {
-		return nil, err
+	file, errCount := os.Open(path)
+	if errCount != nil {
+		return nil, errCount
 	}
+	defer file.Close()
 
 	// count the number of blocked domains
-	lines, err := countLines(file)
-	if err != nil {
-		return nil, err
+	lines, errCount := countLines(file)
+	if errCount != nil {
+		return nil, errCount
 	}
 
 	// allocate the data structure of optimal Size
 	blacklist := Blacklist{
 		filter: bloom.New(uint(lines)*10, 5),
-		array:  make([]string, lines, lines),
+		array:  make([]string, lines),
 	}
 
 	// start again from the beginning of the file
-	file.Seek(0, 0)
+	_, errSeek := file.Seek(0, 0)
+	if errSeek != nil {
+		return nil, errSeek
+	}
 
 	// read the file line-by-line
 	// NB: the file MUST be ORDERED and all domains LOWER CASE!
@@ -136,7 +139,7 @@ func LoadBlacklist(path string) (*Blacklist, error) {
 // Please note that it will move to the end of the file, so rewind is needed.
 func countLines(file io.Reader) (int, error) {
 	size := 2 * 1024
-	buffer := make([]byte, size, size)
+	buffer := make([]byte, size)
 	count := 0
 	for {
 		c, err := file.Read(buffer)

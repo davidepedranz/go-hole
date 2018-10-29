@@ -57,11 +57,17 @@ func runDNSServer() {
 // results from the upstream DNS and blocks domains in the blacklist.
 func makeDNSHandler(blacklist *Blacklist, upstream string, logging bool) func(dns.ResponseWriter, *dns.Msg) {
 
-	// create the logger function
+	// create the logger functions
 	logger := func(res *dns.Msg, duration time.Duration, how string) {}
+	errorLogger := func(err error, description string) {
+		log.Print(description, err)
+	}
 	if logging {
 		logger = func(msg *dns.Msg, rtt time.Duration, how string) {
 			log.Printf("Using %s, response time %s:\n%s\n", how, rtt.String(), msg.String())
+		}
+		errorLogger = func(err error, description string) {
+
 		}
 	}
 
@@ -82,7 +88,10 @@ func makeDNSHandler(blacklist *Blacklist, upstream string, logging bool) func(dn
 			// reply with a format error
 			res := new(dns.Msg)
 			res.SetRcode(req, dns.RcodeFormatError)
-			w.WriteMsg(res)
+			err := w.WriteMsg(res)
+			if err != nil {
+				errorLogger(err, "Error to write DNS response message to client")
+			}
 
 			// collect metrics
 			duration := time.Since(start).Seconds()
@@ -104,7 +113,10 @@ func makeDNSHandler(blacklist *Blacklist, upstream string, logging bool) func(dn
 			// cache found, use the cached answer
 			res := cached.SetReply(req)
 			res.Answer = cached.Answer
-			w.WriteMsg(res)
+			err := w.WriteMsg(res)
+			if err != nil {
+				errorLogger(err, "Error to write DNS response message to client")
+			}
 
 			// log the query
 			duration := time.Since(start)
@@ -124,7 +136,10 @@ func makeDNSHandler(blacklist *Blacklist, upstream string, logging bool) func(dn
 			// reply with "domain not found"
 			res := new(dns.Msg)
 			res.SetRcode(req, dns.RcodeNameError)
-			w.WriteMsg(res)
+			err := w.WriteMsg(res)
+			if err != nil {
+				errorLogger(err, "Error to write DNS response message to client")
+			}
 
 			// log the query
 			duration := time.Since(start)
@@ -158,11 +173,7 @@ func makeDNSHandler(blacklist *Blacklist, upstream string, logging bool) func(dn
 		} else {
 
 			// log the error
-			if logging {
-				log.Print(err)
-			} else {
-				log.Print("Error with upstream")
-			}
+			errorLogger(err, "Error in resolve query against upstream DNS "+upstream)
 
 			// collect metrics
 			durationSeconds := time.Since(start).Seconds()
