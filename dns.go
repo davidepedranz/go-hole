@@ -157,7 +157,10 @@ func makeDNSHandler(blacklist *Blacklist, upstream string, logging bool) func(dn
 		if err == nil {
 
 			// reply to the query
-			w.WriteMsg(res)
+			err := w.WriteMsg(res)
+			if err != nil {
+				errorLogger(err, "Error to write DNS response message to client")
+			}
 
 			// cache the result
 			expiration := time.Duration(res.Answer[0].Header().Ttl) * time.Second
