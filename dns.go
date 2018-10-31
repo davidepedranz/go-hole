@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
-	"github.com/miekg/dns"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/miekg/dns"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 var (
@@ -162,9 +163,11 @@ func makeDNSHandler(blacklist *Blacklist, upstream string, logging bool) func(dn
 				errorLogger(err, "Error to write DNS response message to client")
 			}
 
-			// cache the result
-			expiration := time.Duration(res.Answer[0].Header().Ttl) * time.Second
-			cache.Set(&query, res, expiration)
+			// cache the result if any
+			if len(res.Answer) > 0 {
+				expiration := time.Duration(res.Answer[0].Header().Ttl) * time.Second
+				cache.Set(&query, res, expiration)
+			}
 
 			// log the query
 			logger(res, rtt, "upstream")
