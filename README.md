@@ -31,9 +31,6 @@ This project is inspired by [Pi-Hole](https://github.com/pi-hole/pi-hole), but w
 ## Build & Run
 
 ```sh
-# install the dependencies
-dep ensure
-
 # build the binary
 go build
 
