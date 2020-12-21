@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"fmt"
 	"log"
 	"strings"
@@ -40,12 +41,14 @@ func runDNSServer() {
 
 	// make the custom handler function to reply to DNS queries
 	upstream := getEnvOrDefault("UPSTREAM_DNS", "1.1.1.1:53")
+	tlsSN := getEnvOrDefault("UPSTREAM_TLS_SRVNAME", "")
 	logging := getEnvOrDefault("DEBUG", "") == "true"
-	handler := makeDNSHandler(blacklist, upstream, logging)
+	handler := makeDNSHandler(blacklist, upstream, tlsSN, logging)
 
 	// start the server
 	port := getEnvOrDefault("DNS_PORT", "53")
 	fmt.Printf("Starting DNS server on UDP port %s (logging = %t)...\n", port, logging)
+	fmt.Printf("using upstream: %s (TLS: %s)\n", upstream, tlsSN)
 	server := &dns.Server{Addr: ":" + port, Net: "udp"}
 	dns.HandleFunc(".", handler)
 	err := server.ListenAndServe()
@@ -56,7 +59,7 @@ func runDNSServer() {
 
 // makeDNSHandler creates an handler for the DNS server that caches
 // results from the upstream DNS and blocks domains in the blacklist.
-func makeDNSHandler(blacklist *Blacklist, upstream string, logging bool) func(dns.ResponseWriter, *dns.Msg) {
+func makeDNSHandler(blacklist *Blacklist, upstream string, tlsNS string, logging bool) func(dns.ResponseWriter, *dns.Msg) {
 
 	// create the logger functions
 	logger := func(res *dns.Msg, duration time.Duration, how string) {}
@@ -77,6 +80,13 @@ func makeDNSHandler(blacklist *Blacklist, upstream string, logging bool) func(dn
 
 	// we use a single client to resolve queries against the upstream DNS
 	client := new(dns.Client)
+	if len(tlsNS) > 0 {
+		// Inject server name to verify certificate, otherwise we only have ip
+		client.TLSConfig = new(tls.Config)
+		client.TLSConfig.ServerName = tlsNS
+		// Use TLS
+		client.Net = "tcp-tls"
+	}
 
 	// create the real handler
 	return func(w dns.ResponseWriter, req *dns.Msg) {

@@ -43,12 +43,13 @@ go build
 
 `go-hole` can be configured using a few environment variables:
 
-| Environment Variable | Default Value | Function                                                     |
-| -------------------- | ------------- | ------------------------------------------------------------ |
-| `DNS_PORT`           | `8053`        | UDP port where to listen for DNS queries.                    |
-| `PROMETHEUS_PORT`    | `9090`        | TCP port where to serve the collected metrics.               |
-| `UPSTREAM_DNS`       | `1.1.1.1:53`  | IP and port of the upstream DNS to use to resolve the queries. |
-| `DEBUG`              | `false`       | If true, `go-hole` logs all queries to the standard output.  |
+| Environment Variable   | Default Value | Function                                                              |
+| ---------------------- | ------------- | --------------------------------------------------------------------- |
+| `DNS_PORT`             | `53`          | UDP port where to listen for DNS queries.                             |
+| `PROMETHEUS_PORT`      | `9090`        | TCP port where to serve the collected metrics.                        |
+| `UPSTREAM_DNS`         | `1.1.1.1:53`  | IP and port of the upstream DNS to use to resolve the queries.        |
+| `UPSTREAM_TLS_SRVNAME` | ``            | DNS server name for TLS certificate validation (enables DNS over TLS)  |
+| `DEBUG`                | `false`       | If true, `go-hole` logs all queries to the standard output.           |
 
 You can customize the behaviour of `go-hole` by changing domains in the [blacklist](./data/blacklist.txt). The default blacklist can be build with:
 
