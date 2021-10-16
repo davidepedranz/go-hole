@@ -46,7 +46,7 @@ go build
 | Environment Variable   | Default Value | Function                                                              |
 | ---------------------- | ------------- | --------------------------------------------------------------------- |
 | `DNS_PORT`             | `53`          | UDP port where to listen for DNS queries.                             |
-| `PROMETHEUS_PORT`      | `9090`        | TCP port where to serve the collected metrics.                        |
+| `PROMETHEUS_PORT`      | `9090`        | TCP port where to serve the collected metrics. Port 0 disables the service.                        |
 | `UPSTREAM_DNS`         | `1.1.1.1:53`  | IP and port of the upstream DNS to use to resolve the queries.        |
 | `UPSTREAM_TLS_SRVNAME` | ``            | DNS server name for TLS certificate validation (enables DNS over TLS)  |
 | `DEBUG`                | `false`       | If true, `go-hole` logs all queries to the standard output.           |
@@ -80,6 +80,7 @@ By default, `go-hole` does not log any DNS query. Logging can be enabled for deb
 | Histogram | `gohole_dns_queries_duration_seconds`      | Duration of replies to DNS queries.           |
 | Histogram | `gohole_blacklist_lookup_duration_seconds` | Duration of a domain lookup in the blacklist. |
 | Histogram | `gohole_cache_operation_duration_seconds`  | Duration of an operation on the cache.        |
+| Histogram | `gohole_override_duration_seconds`         | Duration of a domain overrided lookup.        |
 
 By default, metrics are served over HTTP at port `9090` and path `/metrics`.
 

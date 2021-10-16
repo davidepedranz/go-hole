@@ -39,11 +39,13 @@ func runDNSServer() {
 	blacklist := LoadBlacklistOrFail(blacklistPath)
 	fmt.Printf("Loading list of %d blocked domains...\n", blacklist.Size())
 
+	overrides := LoadOverrideListOrFail(overridePath)
+
 	// make the custom handler function to reply to DNS queries
 	upstream := getEnvOrDefault("UPSTREAM_DNS", "1.1.1.1:53")
 	tlsSN := getEnvOrDefault("UPSTREAM_TLS_SRVNAME", "")
 	logging := getEnvOrDefault("DEBUG", "") == "true"
-	handler := makeDNSHandler(blacklist, upstream, tlsSN, logging)
+	handler := makeDNSHandler(blacklist, upstream, tlsSN, overrides, logging)
 
 	// start the server
 	port := getEnvOrDefault("DNS_PORT", "53")
@@ -59,7 +61,7 @@ func runDNSServer() {
 
 // makeDNSHandler creates an handler for the DNS server that caches
 // results from the upstream DNS and blocks domains in the blacklist.
-func makeDNSHandler(blacklist *Blacklist, upstream string, tlsNS string, logging bool) func(dns.ResponseWriter, *dns.Msg) {
+func makeDNSHandler(blacklist *Blacklist, upstream string, tlsNS string, overrides map[string]string, logging bool) func(dns.ResponseWriter, *dns.Msg) {
 
 	// create the logger functions
 	logger := func(res *dns.Msg, duration time.Duration, how string) {}
@@ -159,6 +161,33 @@ func makeDNSHandler(blacklist *Blacklist, upstream string, tlsNS string, logging
 			// collect metrics
 			durationSeconds := duration.Seconds()
 			queriesHistogram.WithLabelValues("block", queryType).Observe(durationSeconds)
+
+			return
+		}
+
+		// then, check if the domain is overridden locally
+		if override, ok := overrides[domain]; ok && queryType == "A" {
+			//mx, err := dns.NewRR("example.com. 10 IN A " + override)
+			mx, err := dns.NewRR(domain + ". 10 IN A " + override)
+			if err != nil {
+				log.Print("Error to generate the DNS response message for the client", err)
+				return
+			}
+
+			res := req.SetReply(req)
+			req.Question = []dns.Question{query}
+			res.Answer = []dns.RR{mx}
+
+			// TODO: you probably want to remove this logging
+			log.Printf(" --> Override response for %s to %s (remote address = %s)", domain, override, w.RemoteAddr())
+			err = w.WriteMsg(res)
+			if err != nil {
+				errorLogger(err, "Error to write DNS response message to client")
+			}
+
+			// collect metrics
+			durationSeconds := time.Since(start).Seconds()
+			queriesHistogram.WithLabelValues("override", queryType).Observe(durationSeconds)
 
 			return
 		}
