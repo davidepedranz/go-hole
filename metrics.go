@@ -16,6 +16,10 @@ var (
 // the application metrics in the Prometheus format.
 func runPrometheusServer() {
 	port := getEnvOrDefault("PROMETHEUS_PORT", "9090")
+	if port == "0" {
+		fmt.Printf("HTTP server with metrics has been DISABLED.\n")
+		return
+	}
 
 	fmt.Printf("Starting HTTP server with metrics on TCP port %s...\n", port)
 	server := &http.Server{Addr: "0.0.0.0:" + port}
